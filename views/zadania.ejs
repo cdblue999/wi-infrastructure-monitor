@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zadania — WI Monitor</title>
+  <link rel="stylesheet" href="/stylesheets/app.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a href="/" class="navbar-item logo">WI Monitor</a>
+    </div>
+    <div class="navbar-menu">
+      <a href="/" class="navbar-item">Panel</a>
+      <a href="/zadania" class="navbar-item active">Zadania</a>
+      <a href="/alarmy" class="navbar-item">Alarmy</a>
+      <a href="/ustawienia" class="navbar-item">Ustawienia</a>
+      <a href="/import" class="navbar-item">Import</a>
+    </div>
+    <div class="navbar-end">
+      <form method="post" action="/api/logout">
+        <button class="btn btn-sm">Wyloguj</button>
+      </form>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="page-header">
+      <h1 class="page-title">Zadania inwestycyjne</h1>
+      <button class="btn btn-primary" onclick="openAddModal()">+ Nowe zadanie</button>
+    </div>
+
+    <div class="filters">
+      <input type="text" id="search-input" class="input" placeholder="Szukaj..." oninput="filterZadania()">
+      <select id="kategoria-filter" class="input" onchange="filterZadania()">
+        <option value="">Wszystkie kategorie</option>
+        <option value="Drogi i mosty">Drogi i mosty</option>
+        <option value="Komunikacja">Komunikacja</option>
+        <option value="Oświata">Oświata</option>
+        <option value="Sport i rekreacja">Sport i rekreacja</option>
+        <option value="Kultura">Kultura</option>
+        <option value="Ochrona środowiska">Ochrona środowiska</option>
+        <option value="Mieszkalnictwo">Mieszkalnictwo</option>
+        <option value="Inne">Inne</option>
+      </select>
+      <select id="status-filter" class="input" onchange="filterZadania()">
+        <option value="">Wszystkie statusy</option>
+        <option value="Koncepcja">Koncepcja</option>
+        <option value="Projektowanie">Projektowanie</option>
+        <option value="Przetarg">Przetarg</option>
+        <option value="Realizacja">Realizacja</option>
+        <option value="Odbiory">Odbiory</option>
+        <option value="Rozliczenie">Rozliczenie</option>
+        <option value="Rękojmia">Rękojmia</option>
+        <option value="Zakończone">Zakończone</option>
+      </select>
+    </div>
+
+    <div id="zadania-list" class="zadania-list"></div>
+  </main>
+
+  <!-- Add/Edit Modal -->
+  <div id="zadanie-modal" class="modal" style="display:none">
+    <div class="modal-backdrop" onclick="closeModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Nowe zadanie</h2>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <form id="zadanie-form" onsubmit="saveZadanie(event)">
+        <input type="hidden" id="zadanie-id">
+        <div class="form-grid">
+          <div class="field">
+            <label>Nazwa zadania</label>
+            <input type="text" id="f-nazwa" class="input" required>
+          </div>
+          <div class="field">
+            <label>Numer PZP</label>
+            <input type="text" id="f-numer-pzp" class="input" placeholder="WI/DK/ZP/2026/01">
+          </div>
+          <div class="field">
+            <label>Kategoria</label>
+            <select id="f-kategoria" class="input">
+              <option>Drogi i mosty</option>
+              <option>Komunikacja</option>
+              <option>Oświata</option>
+              <option>Sport i rekreacja</option>
+              <option>Kultura</option>
+              <option>Ochrona środowiska</option>
+              <option>Mieszkalnictwo</option>
+              <option>Inne</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Typ inwestycji</label>
+            <select id="f-typ" class="input">
+              <option>Drogowa</option>
+              <option>Torowisko</option>
+              <option>Kubaturowa</option>
+              <option>Inżynieryjna</option>
+              <option>Zielona</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Status</label>
+            <select id="f-status" class="input">
+              <option>Koncepcja</option>
+              <option>Projektowanie</option>
+              <option>Przetarg</option>
+              <option>Realizacja</option>
+              <option>Odbiory</option>
+              <option>Rozliczenie</option>
+              <option>Rękojmia</option>
+              <option>Zakończone</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Lokalizacja</label>
+            <input type="text" id="f-lokalizacja" class="input">
+          </div>
+          <div class="field">
+            <label>Budżet — miasto (zł)</label>
+            <input type="number" id="f-budzet-miasto" class="input" step="0.01">
+          </div>
+          <div class="field">
+            <label>Budżet — UE (zł)</label>
+            <input type="number" id="f-budzet-ue" class="input" step="0.01">
+          </div>
+          <div class="field">
+            <label>Budżet — inne (zł)</label>
+            <input type="number" id="f-budzet-inne" class="input" step="0.01">
+          </div>
+          <div class="field">
+            <label>Wykonawca</label>
+            <input type="text" id="f-wykonawca" class="input">
+          </div>
+          <div class="field">
+            <label>Data umowy (RRRRMMDD)</label>
+            <input type="number" id="f-data-umowy" class="input">
+          </div>
+          <div class="field">
+            <label>Termin umowny (RRRRMMDD)</label>
+            <input type="number" id="f-termin" class="input">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal()">Anuluj</button>
+          <button type="submit" class="btn btn-primary">Zapisz</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detail-modal" class="modal" style="display:none">
+    <div class="modal-backdrop" onclick="closeDetail()"></div>
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h2 id="detail-title">Szczegóły zadania</h2>
+        <button class="modal-close" onclick="closeDetail()">&times;</button>
+      </div>
+      <div id="detail-content"></div>
+    </div>
+  </div>
+
+  <script>
+    let allZadania = []
+
+    async function loadZadania() {
+      const res = await fetch('/api/zadania')
+      allZadania = await res.json()
+      renderZadania(allZadania)
+    }
+
+    function filterZadania() {
+      const search = document.getElementById('search-input').value.toLowerCase()
+      const kategoria = document.getElementById('kategoria-filter').value
+      const status = document.getElementById('status-filter').value
+
+      const filtered = allZadania.filter(z => {
+        if (search && !z.nazwaZadania.toLowerCase().includes(search) && !(z.numerPzp || '').toLowerCase().includes(search)) return false
+        if (kategoria && z.kategoria !== kategoria) return false
+        if (status && z.status !== status) return false
+        return true
+      })
+      renderZadania(filtered)
+    }
+
+    function renderZadania(list) {
+      const container = document.getElementById('zadania-list')
+      if (list.length === 0) {
+        container.innerHTML = '<p class="empty">Brak zadań inwestycyjnych</p>'
+        return
+      }
+      container.innerHTML = list.map(z => `
+        <div class="zadanie-card" onclick="openDetail(${z.id})">
+          <div class="zadanie-header">
+            <strong>${z.nazwaZadania}</strong>
+            <span class="status-badge status-${(z.status || '').toLowerCase()}">${z.status}</span>
+          </div>
+          <div class="zadanie-meta">
+            <span>${z.numerPzp || '—'}</span>
+            <span>${z.kategoria}</span>
+            <span>${z.lokalizacja || ''}</span>
+            <span>${new Intl.NumberFormat('pl-PL').format(z.budzetMiastoPln + z.budzetUePln + z.budzetInnePln)} zł</span>
+          </div>
+        </div>
+      `).join('')
+    }
+
+    function openAddModal() {
+      document.getElementById('modal-title').textContent = 'Nowe zadanie'
+      document.getElementById('zadanie-id').value = ''
+      document.getElementById('zadanie-form').reset()
+      document.getElementById('zadanie-modal').style.display = 'flex'
+    }
+
+    function closeModal() {
+      document.getElementById('zadanie-modal').style.display = 'none'
+    }
+
+    async function saveZadanie(e) {
+      e.preventDefault()
+      const id = document.getElementById('zadanie-id').value
+      const data = {
+        nazwaZadania: document.getElementById('f-nazwa').value,
+        numerPzp: document.getElementById('f-numer-pzp').value,
+        kategoria: document.getElementById('f-kategoria').value,
+        typInwestycji: document.getElementById('f-typ').value,
+        status: document.getElementById('f-status').value,
+        lokalizacja: document.getElementById('f-lokalizacja').value,
+        budzetMiastoPln: parseFloat(document.getElementById('f-budzet-miasto').value) || 0,
+        budzetUePln: parseFloat(document.getElementById('f-budzet-ue').value) || 0,
+        budzetInnePln: parseFloat(document.getElementById('f-budzet-inne').value) || 0,
+        umowaWykonawca: document.getElementById('f-wykonawca').value,
+        dataUmowy: parseInt(document.getElementById('f-data-umowy').value) || null,
+        terminUmowny: parseInt(document.getElementById('f-termin').value) || null
+      }
+
+      const url = id ? `/api/zadania/${id}` : '/api/zadania/add'
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      const result = await res.json()
+      if (result.success) {
+        closeModal()
+        loadZadania()
+      }
+    }
+
+    async function openDetail(id) {
+      const res = await fetch(`/api/zadania/${id}`)
+      const z = await res.json()
+      const podRes = await fetch(`/api/zadania/${id}/podwykonawcy`)
+      const podwykonawcy = await podRes.json()
+      const etapRes = await fetch(`/api/zadania/${id}/etapy`)
+      const etapy = await etapRes.json()
+
+      document.getElementById('detail-title').textContent = z.nazwaZadania
+      document.getElementById('detail-content').innerHTML = `
+        <div class="detail-grid">
+          <div class="detail-section">
+            <h3>Informacje podstawowe</h3>
+            <table class="table">
+              <tr><td>Numer PZP</td><td>${z.numerPzp || '—'}</td></tr>
+              <tr><td>Kategoria</td><td>${z.kategoria}</td></tr>
+              <tr><td>Typ</td><td>${z.typInwestycji}</td></tr>
+              <tr><td>Status</td><td>${z.status}</td></tr>
+              <tr><td>Lokalizacja</td><td>${z.lokalizacja || '—'}</td></tr>
+              <tr><td>Wykonawca</td><td>${z.umowaWykonawca || '—'}</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h3>Budżet</h3>
+            <div class="budget-bar">
+              <div class="budget-segment budget-city" style="flex:${z.budzetMiastoPln}">Miasto: ${new Intl.NumberFormat('pl-PL').format(z.budzetMiastoPln)} zł</div>
+              <div class="budget-segment budget-eu" style="flex:${z.budzetUePln}">UE: ${new Intl.NumberFormat('pl-PL').format(z.budzetUePln)} zł</div>
+              <div class="budget-segment budget-other" style="flex:${z.budzetInnePln}">Inne: ${new Intl.NumberFormat('pl-PL').format(z.budzetInnePln)} zł</div>
+            </div>
+          </div>
+          <div class="detail-section">
+            <h3>Etapy</h3>
+            ${etapy.length === 0 ? '<p class="empty">Brak etapów</p>' : etapy.map(e => `
+              <div class="etap-item">
+                <div class="etap-header">
+                  <strong>Faza ${e.faza}: ${e.nazwaEtapu}</strong>
+                  <span class="status-badge status-${e.status}">${e.status}</span>
+                </div>
+                <div class="etap-dates">Termin: ${e.terminPierwotny} → ${e.terminAktualny}</div>
+                ${e.aneksy && e.aneksy.length > 0 ? `
+                  <div class="aneksy-list">
+                    <small>Aneksy:</small>
+                    ${e.aneksy.map(a => `<div class="aneks-item">${a.poprzedniTermin} → ${a.nowyTermin}: ${a.przyczyna} (${a.dataPodpisania})</div>`).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            `).join('')}
+          </div>
+          <div class="detail-section">
+            <h3>Podwykonawcy</h3>
+            ${podwykonawcy.length === 0 ? '<p class="empty">Brak podwykonawców</p>' : podwykonawcy.map(p => `
+              <div class="subcontractor-item">
+                <strong>${p.firma}</strong> (NIP: ${p.nip})
+                <br><small>Zakres: ${p.zakresRobot}</small>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `
+      document.getElementById('detail-modal').style.display = 'flex'
+    }
+
+    function closeDetail() {
+      document.getElementById('detail-modal').style.display = 'none'
+    }
+
+    loadZadania()
+  </script>
+</body>
+</html>

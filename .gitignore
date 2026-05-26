@@ -1,0 +1,14 @@
+node_modules/
+data/sessions/
+data/*.db
+data/config.js
+logs/
+wi_data/
+.env
+*.log
+.DS_Store
+dist/
+version.js
+public/javascripts/*.min.js
+public/stylesheets/*.css
+!public/stylesheets/.gitkeep

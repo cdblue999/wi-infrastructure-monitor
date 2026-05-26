@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alarmy — WI Monitor</title>
+  <link rel="stylesheet" href="/stylesheets/app.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a href="/" class="navbar-item logo">WI Monitor</a>
+    </div>
+    <div class="navbar-menu">
+      <a href="/" class="navbar-item">Panel</a>
+      <a href="/zadania" class="navbar-item">Zadania</a>
+      <a href="/alarmy" class="navbar-item active">Alarmy</a>
+      <a href="/ustawienia" class="navbar-item">Ustawienia</a>
+      <a href="/import" class="navbar-item">Import</a>
+    </div>
+    <div class="navbar-end">
+      <form method="post" action="/api/logout">
+        <button class="btn btn-sm">Wyloguj</button>
+      </form>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 class="page-title">Alarmy</h1>
+
+    <div class="filters">
+      <select id="alarm-typ-filter" class="input" onchange="loadAlarmy()">
+        <option value="">Wszystkie typy</option>
+        <option value="wygasniecie_OC">Wygaśnięcie OC</option>
+        <option value="brak_zabezpieczenia">Brak zabezpieczenia</option>
+        <option value="opoznienie_etapu">Opóźnienie etapu</option>
+        <option value="wygasanie_rekojmi">Wygaśnięcie rękojmi</option>
+      </select>
+      <select id="alarm-status-filter" class="input" onchange="loadAlarmy()">
+        <option value="0">Aktywne</option>
+        <option value="">Wszystkie</option>
+        <option value="1">Wyłączone</option>
+      </select>
+    </div>
+
+    <div id="alarmy-list"></div>
+  </main>
+
+  <script>
+    async function loadAlarmy() {
+      const typ = document.getElementById('alarm-typ-filter').value
+      const wylaczony = document.getElementById('alarm-status-filter').value
+      const params = new URLSearchParams()
+      if (typ) params.set('typ', typ)
+      if (wylaczony !== '') params.set('wylaczony', wylaczony)
+
+      const res = await fetch(`/api/alarmy?${params}`)
+      const alarms = await res.json()
+
+      const container = document.getElementById('alarmy-list')
+      if (alarms.length === 0) {
+        container.innerHTML = '<p class="empty">Brak alarmów</p>'
+        return
+      }
+      container.innerHTML = alarms.map(a => `
+        <div class="alarm-item alarm-${a.poziom}">
+          <div class="alarm-icon">
+            ${a.poziom === 'critical' ? '<i class="fas fa-exclamation-circle"></i>' : a.poziom === 'warning' ? '<i class="fas fa-exclamation-triangle"></i>' : '<i class="fas fa-info-circle"></i>'}
+          </div>
+          <div class="alarm-body">
+            <div class="alarm-tresc">${a.tresc}</div>
+            <div class="alarm-meta">${a.typ} • ${new Date(a.utworzonoMillis).toLocaleString('pl-PL')}</div>
+          </div>
+          ${!a.wylaczony ? `<button class="btn btn-sm" onclick="dismissAlarm(${a.id})">Wyłącz</button>` : '<span class="alarm-dismissed">Wyłączony</span>'}
+        </div>
+      `).join('')
+    }
+
+    async function dismissAlarm(id) {
+      await fetch(`/api/alarmy/${id}/dismiss`, { method: 'POST' })
+      loadAlarmy()
+    }
+
+    loadAlarmy()
+    setInterval(loadAlarmy, 30000)
+  </script>
+</body>
+</html>

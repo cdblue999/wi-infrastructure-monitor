@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ustawienia — WI Monitor</title>
+  <link rel="stylesheet" href="/stylesheets/app.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a href="/" class="navbar-item logo">WI Monitor</a>
+    </div>
+    <div class="navbar-menu">
+      <a href="/" class="navbar-item">Panel</a>
+      <a href="/zadania" class="navbar-item">Zadania</a>
+      <a href="/alarmy" class="navbar-item">Alarmy</a>
+      <a href="/ustawienia" class="navbar-item active">Ustawienia</a>
+      <a href="/import" class="navbar-item">Import</a>
+    </div>
+    <div class="navbar-end">
+      <form method="post" action="/api/logout">
+        <button class="btn btn-sm">Wyloguj</button>
+      </form>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 class="page-title">Ustawienia</h1>
+    <p class="page-note">Ustawienia są przechowywane w pliku <code>data/config.js</code>. Zmiany wymagają restartu serwera.</p>
+
+    <div class="settings-grid">
+      <div class="card">
+        <h3>Powiadomienia e-mail</h3>
+        <dl class="settings-dl">
+          <dt>Stan</dt><dd><%= config.emailEnabled ? 'Włączone' : 'Wyłączone' %></dd>
+          <dt>Serwer SMTP</dt><dd><%= config.emailHost %>:<%= config.emailPort %></dd>
+          <dt>Nadawca</dt><dd><%= config.emailFrom || '—' %></dd>
+          <dt>Odbiorca</dt><dd><%= config.emailTo || '—' %></dd>
+        </dl>
+      </div>
+
+      <div class="card">
+        <h3>Microsoft Teams</h3>
+        <dl class="settings-dl">
+          <dt>Stan</dt><dd><%= config.teamsEnabled ? 'Włączone' : 'Wyłączone' %></dd>
+          <dt>Webhook URL</dt><dd class="url-cell"><%= config.teamsWebhookUrl || '—' %></dd>
+        </dl>
+      </div>
+
+      <div class="card">
+        <h3>Powiadomienia systemowe</h3>
+        <dl class="settings-dl">
+          <dt>Windows Toast</dt><dd><%= config.toastEnabled ? 'Włączone' : 'Wyłączone' %></dd>
+        </dl>
+      </div>
+
+      <div class="card">
+        <h3>Alarmy</h3>
+        <dl class="settings-dl">
+          <dt>Okres ostrzegawczy</dt><dd><%= config.warningDays %> dni</dd>
+        </dl>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

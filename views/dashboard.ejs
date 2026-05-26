@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel — WI Monitor</title>
+  <link rel="stylesheet" href="/stylesheets/app.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a href="/" class="navbar-item logo">WI Monitor</a>
+    </div>
+    <div class="navbar-menu">
+      <a href="/" class="navbar-item active">Panel</a>
+      <a href="/zadania" class="navbar-item">Zadania</a>
+      <a href="/alarmy" class="navbar-item">
+        Alarmy
+        <% if (alarmCount > 0) { %>
+          <span class="badge"><%= alarmCount %></span>
+        <% } %>
+      </a>
+      <a href="/ustawienia" class="navbar-item">Ustawienia</a>
+      <a href="/import" class="navbar-item">Import</a>
+    </div>
+    <div class="navbar-end">
+      <form method="post" action="/api/logout">
+        <button class="btn btn-sm">Wyloguj</button>
+      </form>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 class="page-title">Panel monitorowania inwestycji</h1>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value"><%= activeCount %></div>
+        <div class="stat-label">Aktywne zadania</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= totalZadania %></div>
+        <div class="stat-label">Wszystkie zadania</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= new Intl.NumberFormat('pl-PL').format(totalBudget) %></div>
+        <div class="stat-label">Budżet łączny (zł)</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-value"><%= expiringCount %></div>
+        <div class="stat-label">Wygasające polisy</div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="card">
+        <h3>Zadania według kategorii</h3>
+        <table class="table">
+          <% for (const [cat, count] of Object.entries(categoryStats)) { %>
+            <tr><td><%= cat %></td><td><%= count %></td></tr>
+          <% } %>
+          <% if (Object.keys(categoryStats).length === 0) { %>
+            <tr><td colspan="2" class="empty">Brak zadań</td></tr>
+          <% } %>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Wygasające polisy OC (30 dni)</h3>
+        <% if (expiringPolicies.length === 0) { %>
+          <p class="empty">Brak wygasających polis</p>
+        <% } else { %>
+          <table class="table">
+            <% for (const p of expiringPolicies) { %>
+              <tr>
+                <td><%= p.firma %></td>
+                <td><%= p.nr_polisy %></td>
+                <td><%= p.data_waznosci %></td>
+                <td><%= p.nazwa_zadania %></td>
+              </tr>
+            <% } %>
+          </table>
+        <% } %>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

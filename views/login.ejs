@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zaloguj się — WI Monitor</title>
+  <link rel="stylesheet" href="/stylesheets/app.css">
+</head>
+<body class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>WI</h1>
+      <span>Infrastructure Monitor</span>
+    </div>
+    <h2>Wrocławskie Inwestycje</h2>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <form id="login-form" method="post" action="/api/login">
+      <div class="field">
+        <label for="pin">Kod dostępu</label>
+        <input type="password" id="pin" name="pin" class="input" autocomplete="off" autofocus required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Zaloguj się</button>
+    </form>
+
+    <form id="logout-form" method="post" action="/api/logout" style="display:none"></form>
+  </div>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const pin = document.getElementById('pin').value
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        })
+        const data = await res.json()
+        if (data.success) {
+          window.location.href = '/'
+        } else {
+          alert(data.error || 'Nieprawidłowy kod dostępu')
+        }
+      } catch {
+        alert('Błąd połączenia z serwerem')
+      }
+    })
+  </script>
+</body>
+</html>

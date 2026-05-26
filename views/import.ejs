@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import — WI Monitor</title>
+  <link rel="stylesheet" href="/stylesheets/app.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a href="/" class="navbar-item logo">WI Monitor</a>
+    </div>
+    <div class="navbar-menu">
+      <a href="/" class="navbar-item">Panel</a>
+      <a href="/zadania" class="navbar-item">Zadania</a>
+      <a href="/alarmy" class="navbar-item">Alarmy</a>
+      <a href="/ustawienia" class="navbar-item">Ustawienia</a>
+      <a href="/import" class="navbar-item active">Import</a>
+    </div>
+    <div class="navbar-end">
+      <form method="post" action="/api/logout">
+        <button class="btn btn-sm">Wyloguj</button>
+      </form>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 class="page-title">Import danych</h1>
+
+    <div class="card import-card">
+      <h3>Import z pliku CSV</h3>
+      <p class="page-note">Obsługiwane formaty: CSV (Excel). Kolumny: nazwa_zadania, numer_pzp, kategoria, status, budzet_miasto_pln, budzet_ue_pln, budzet_inne_pln, umowa_wykonawca, termin_umowny</p>
+      <div class="drop-zone" id="drop-zone">
+        <p>Przeciągnij plik CSV tutaj lub kliknij, aby wybrać</p>
+        <input type="file" id="file-input" accept=".csv,.xlsx" style="display:none">
+      </div>
+      <div id="import-result" style="display:none" class="import-result"></div>
+    </div>
+
+    <div class="card">
+      <h3>Import z wiersza poleceń</h3>
+      <code>node tasks/import-csv.js --file seed/kontrahenci.csv</code>
+    </div>
+  </main>
+
+  <script>
+    const dropZone = document.getElementById('drop-zone')
+    const fileInput = document.getElementById('file-input')
+
+    dropZone.addEventListener('click', () => fileInput.click())
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over') })
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'))
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault()
+      dropZone.classList.remove('drag-over')
+      if (e.dataTransfer.files.length > 0) uploadFile(e.dataTransfer.files[0])
+    })
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) uploadFile(fileInput.files[0])
+    })
+
+    async function uploadFile(file) {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const resultDiv = document.getElementById('import-result')
+      resultDiv.style.display = 'block'
+      resultDiv.innerHTML = '<p>Przetwarzanie...</p>'
+
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: formData })
+        const data = await res.json()
+        if (data.success) {
+          resultDiv.innerHTML = `<div class="alert alert-success">Zaimportowano ${data.count} rekordów</div>`
+          loadZadania()
+        } else {
+          resultDiv.innerHTML = `<div class="alert alert-error">Błąd: ${data.error}</div>`
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="alert alert-error">Błąd: ${err.message}</div>`
+      }
+    }
+  </script>
+</body>
+</html>
